@@ -1,16 +1,16 @@
 # STAC Federation Extension (EODC)
 
-A small **third-party STAC extension** formally defining the `federation:*`
-fields used by the EODC federated STAC catalogue
+A small STAC extension that describes **federation** and **metadata-harmonization
+provenance** for collections published by the EODC STAC catalogue
 ([`catalogue.services.eodc.eu`](https://catalogue.services.eodc.eu)).
 
-The federation is **search-time only**: collections are **not merged**, so every
-harmonized object maps to exactly one source. This extension records:
+It answers two questions for a consumer:
 
-1. **Federation** — which providers can serve an object (`federation:backends`).
-2. **Harmonization provenance** — a 1:1 backtracking record: where the object came
-   from, which rules/software were used, and every field-level change
-   (`federation:provenance`, `federation:source_*`).
+1. **Which providers** can serve this collection (`federation:backends`).
+2. **Where the collection came from and what was harmonized** (`federation:provenance`).
+
+The federation is search-time only: collections are **not merged**, so each
+harmonized collection maps to exactly one source.
 
 ## Referencing it
 
@@ -18,98 +18,66 @@ Add the schema URL to an object's `stac_extensions`:
 
 ```json
 "stac_extensions": [
-  "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.2.0/schema.json"
+  "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.3.0/schema.json"
 ]
 ```
 
-- Schema: [`v0.2.0/schema.json`](v0.2.0/schema.json)
-- Schema `$id`: `https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.2.0/schema.json`
+- Schema: [`v0.3.0/schema.json`](v0.3.0/schema.json)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
-## Field reference
+## Fields
 
-| Field | Location | Type | Description |
-| --- | --- | --- | --- |
-| `federation:backends` | Collection `summaries` · Item `properties` | `string[]` | EODAG provider names that can serve the object. Order not significant. |
-| `federation:provenance` | Collection (top level) | `object` | 1:1 backtracking record (below). |
-| `federation:source_<field>` | Collection `summaries` · Item `properties` | `array` | Original value(s) before vocabulary normalization. |
+| Field | Location | Description |
+| --- | --- | --- |
+| `federation:backends` | Collection `summaries`, Item `properties` | Providers that can serve the object. |
+| `federation:provenance` | Collection (top level) | Source + harmonization result (below). |
 
 ### `federation:provenance`
 
-| Property | Type | Description |
-| --- | --- | --- |
-| `profile` | `string` | Harmonization profile id, e.g. `eodc-stac-v1`. |
-| `profile_version` | `string` | Version of the harmonization rules. |
-| `target_stac_version` | `string` | STAC version the object was migrated to. |
-| `software` | `object` | The agent that harmonized it: `{ "name": ..., "version": ... }`. |
-| `source` | `object` | Where it came from (see below). |
-| `transformations` | `object[]` | Field-level operations (see below). |
+```jsonc
+{
+  "source": {
+    "collection_id": "GFM",
+    "href": "https://stac.eodc.eu/api/v1/collections/GFM",
+    "providers": ["eodc"]
+  },
+  "harmonized": {
+    "profile": "eodc-stac-v1",
+    "profile_version": "1",
+    "stac_version": "1.1.0",
+    "upstream_stac_version": "1.0.0"
+  },
+  "changes": [
+    "Migrated to STAC 1.1.0",
+    "Normalized license",
+    "Repaired extension metadata"
+  ]
+}
+```
 
-`source`:
-
-| Property | Type | Description |
-| --- | --- | --- |
-| `kind` | `enum` | `upstream-collection` (pass-through with a known source document URL) or `provider-product` (locally federated collection). |
-| `collection_id` | `string` | Source collection id. |
-| `href` | `uri` | Source collection URL (`upstream-collection` only). |
-| `retrieved_at` | `date-time` | When the source metadata was fetched. |
-| `sha256` | `string` | SHA-256 of the source metadata snapshot. |
-| `providers` | `object[]` | For `provider-product`: `{ "name": ..., "url": ... }`. |
-
-`transformations[]` — each entry is `{ target, operation, source?, value?, issue? }`:
-
-| Property | Description |
+| Property | Meaning |
 | --- | --- |
-| `target` | Path of the changed field, e.g. `summaries/constellation`, `stac_version`. |
-| `operation` | Operation id (reference below). |
-| `source` | Original value before harmonization. |
-| `value` | New (canonical) value after harmonization. |
-| `issue` | Upstream defect id (`UP-n`) this workaround addresses, when applicable. |
+| `source.collection_id` | The source collection id. |
+| `source.href` | URL of the source collection (present for pass-throughs). |
+| `source.providers` | Providers that serve the source. |
+| `harmonized.profile` / `profile_version` | The EODC harmonization profile applied. |
+| `harmonized.stac_version` | STAC version of the harmonized collection. |
+| `harmonized.upstream_stac_version` | STAC version of the source, when it differed. |
+| `changes` | Plain-language summary of what the harmonization changed. |
 
-## Operation reference
-
-| Operation | Meaning |
-| --- | --- |
-| `vocabulary:constellation` · `vocabulary:platform` · `vocabulary:instruments` · `vocabulary:processing:level` | Canonicalized to the profile vocabulary. |
-| `license:deprecated` | Deprecated license value (`proprietary`/`various`) → `other`. |
-| `migration:stac_version` | Stamped the target STAC version. |
-| `bands:migrate` | `eo:bands`/`raster:bands` → common-metadata `bands`. |
-| `schema:summaries_force_array` | Scalar `summaries` value → single-element array (STAC 1.1). |
-| `schema:item_assets_min_properties` | Added fields so an `item_assets` entry has ≥ 2 properties. |
-| `schema:stac_extensions_normalize` | Stripped a trailing `#` / deduped `stac_extensions`. |
-| `extension:declare` | Declared an extension. |
-| `extension:drop_unused` | Dropped a declared extension with no matching field (e.g. `UP-5`, `UP-7`, `UP-9`). |
-| `datacube:fix_temporal_extent` | Repaired a datacube temporal `extent` shape (`UP-1`). |
-| `datacube:drop_axis` | Dropped a disallowed `axis` on a temporal dimension. |
-
-## Placement rules
-
-- `federation:backends` and `federation:source_*` → Collection `summaries`, Item `properties`.
-- `federation:provenance` → **Collection top level only**. It must **not** be in `summaries`,
-  because a plain object is not a valid STAC 1.1 `summaries` value (array / JSON Schema / Range).
-- Items carry **no** inline provenance object (avoids bloating search results); item-level
-  backtracking uses `federation:backends` + asset `alternate.origin`.
+`federation:provenance` is placed at the **collection top level**; it is not a
+valid STAC `summaries` value and must not be used there.
 
 ## Examples
 
 - [`examples/collection-example.json`](examples/collection-example.json)
 - [`examples/item-example.json`](examples/item-example.json)
 
-(Fragments, not complete STAC documents.)
-
-## Validating
-
-```bash
-# with stac-check / stac-validator
-stac-check https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.2.0/schema.json
-```
-
 ## Versioning
 
-- Path-versioned (`v0.2.0/`); the `$id` matches the schema URL. `v0.1.0/` is kept for immutability.
-- Breaking changes get a new version directory. See [`CHANGELOG.md`](CHANGELOG.md).
-- `main` is used in the raw URL for convenience; pin to a tag for immutable use.
+Path-versioned (`v0.3.0/`); the `$id` matches the schema URL. Previous versions
+are kept for immutability. See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 
-TBD — add a `LICENSE` for this repository.
+Apache-2.0 (see [`LICENSE`](LICENSE)).

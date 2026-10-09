@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.3.0/schema.json",
+  "title": "EODC Federation Extension",
+  "description": "Federated-provider attribution and metadata-harmonization provenance for the EODC STAC catalogue. The federation is search-time only: collections are not merged, so each harmonized collection maps to exactly one source.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/item" },
+    { "$ref": "#/definitions/collection" }
+  ],
+  "definitions": {
+    "item": {
+      "title": "STAC Item",
+      "properties": {
+        "type": { "const": "Feature" },
+        "properties": { "$ref": "#/definitions/federationFields" }
+      }
+    },
+    "collection": {
+      "title": "STAC Collection",
+      "properties": {
+        "type": { "const": "Collection" },
+        "summaries": { "$ref": "#/definitions/federationFields" },
+        "federation:provenance": { "$ref": "#/definitions/provenance" }
+      }
+    },
+    "federationFields": {
+      "type": "object",
+      "properties": {
+        "federation:backends": {
+          "title": "Federated providers",
+          "description": "Providers that can serve this object.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "provenance": {
+      "title": "Federation provenance",
+      "description": "Where this collection came from and what the harmonization changed.",
+      "type": "object",
+      "required": ["source", "harmonized"],
+      "properties": {
+        "source": {
+          "title": "Source",
+          "description": "The single source this collection corresponds to.",
+          "type": "object",
+          "required": ["collection_id"],
+          "properties": {
+            "collection_id": { "type": "string", "description": "Source collection id." },
+            "href": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL of the source collection, when it is a pass-through."
+            },
+            "providers": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string" },
+              "description": "Providers that serve the source collection."
+            }
+          }
+        },
+        "harmonized": {
+          "title": "Harmonized",
+          "description": "The result of applying the EODC harmonization profile.",
+          "type": "object",
+          "required": ["profile", "stac_version"],
+          "properties": {
+            "profile": { "type": "string", "description": "Harmonization profile id, e.g. 'eodc-stac-v1'." },
+            "profile_version": { "type": "string" },
+            "stac_version": { "type": "string", "description": "STAC version of the harmonized collection." },
+            "upstream_stac_version": {
+              "type": "string",
+              "description": "STAC version of the source, when it differed."
+            }
+          }
+        },
+        "changes": {
+          "title": "Changes",
+          "description": "Plain-language summary of what the harmonization changed.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

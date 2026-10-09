@@ -4,52 +4,29 @@
   "id": "GFM",
   "title": "Global Flood Monitoring",
   "stac_extensions": [
-    "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.2.0/schema.json"
+    "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.3.0/schema.json"
   ],
   "summaries": {
     "constellation": ["sentinel-1"],
     "platform": ["sentinel-1a", "sentinel-1b", "sentinel-1c", "sentinel-1d"],
-    "federation:backends": ["eodc"],
-    "federation:source_license": ["proprietary"]
+    "federation:backends": ["eodc"]
   },
   "federation:provenance": {
-    "profile": "eodc-stac-v1",
-    "profile_version": "1",
-    "target_stac_version": "1.1.0",
-    "software": { "name": "eodc-harmonization-layer", "version": "1" },
     "source": {
-      "kind": "upstream-collection",
       "collection_id": "GFM",
       "href": "https://stac.eodc.eu/api/v1/collections/GFM",
-      "retrieved_at": "2026-10-09T12:00:00Z",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "providers": ["eodc"]
     },
-    "transformations": [
-      {
-        "target": "license",
-        "operation": "license:deprecated",
-        "source": "proprietary",
-        "value": "other"
-      },
-      {
-        "target": "stac_version",
-        "operation": "migration:stac_version",
-        "source": "1.0.0",
-        "value": "1.1.0"
-      },
-      {
-        "target": "cube:dimensions/time/extent",
-        "operation": "datacube:fix_temporal_extent",
-        "source": { "interval": [["2015-01-01T00:00:00Z", null]] },
-        "value": ["2015-01-01T00:00:00Z", null],
-        "issue": "UP-1"
-      },
-      {
-        "target": "stac_extensions",
-        "operation": "extension:drop_unused",
-        "source": "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
-        "issue": "UP-5"
-      }
+    "harmonized": {
+      "profile": "eodc-stac-v1",
+      "profile_version": "1",
+      "stac_version": "1.1.0",
+      "upstream_stac_version": "1.0.0"
+    },
+    "changes": [
+      "Migrated to STAC 1.1.0",
+      "Updated license to a current value",
+      "Repaired extension metadata"
     ]
   }
 }

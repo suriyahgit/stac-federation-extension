@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0
+
+- Simplified `federation:provenance` to a production shape: `source` + `harmonized`
+  + a plain-language `changes` summary.
+- Removed internal/implementation detail (`transformations`, `software`, `sha256`,
+  `retrieved_at`, `issue`) and the `federation:source_*` fields.
+- README rewritten as production documentation.
+
 ## v0.2.0
 
 - Restructured the schema around explicit `item` / `collection` definitions (`oneOf` on `type`).
