@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.2.0/schema.json",
+  "title": "EODC Federation Extension",
+  "description": "Federated-provider attribution and 1:1 metadata-harmonization provenance for the EODC federated STAC catalogue. The federation is search-time only: collections are not merged, so each harmonized object maps to exactly one source.",
+  "$comment": "Reference from stac_extensions. Fields: `federation:backends` and `federation:source_*` live in Collection `summaries` / Item `properties`; `federation:provenance` is Collection top-level.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/item" },
+    { "$ref": "#/definitions/collection" }
+  ],
+  "definitions": {
+    "item": {
+      "title": "STAC Item",
+      "properties": {
+        "type": { "const": "Feature" },
+        "properties": { "$ref": "#/definitions/federationFields" }
+      }
+    },
+    "collection": {
+      "title": "STAC Collection",
+      "properties": {
+        "type": { "const": "Collection" },
+        "summaries": { "$ref": "#/definitions/federationFields" },
+        "federation:provenance": { "$ref": "#/definitions/provenance" }
+      }
+    },
+    "federationFields": {
+      "type": "object",
+      "properties": {
+        "federation:backends": { "$ref": "#/definitions/backends" }
+      },
+      "patternProperties": {
+        "^federation:source_": {
+          "title": "Pre-harmonization value",
+          "description": "The original value(s) before vocabulary normalization, kept so a change can be audited/reverted.",
+          "type": "array"
+        }
+      }
+    },
+    "backends": {
+      "title": "Federated providers",
+      "description": "Names of the EODAG providers that can serve this object. Order is not significant.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "provenance": {
+      "title": "Harmonization provenance",
+      "description": "1:1 backtracking record: where the object came from and what the harmonization layer changed.",
+      "type": "object",
+      "required": ["profile", "target_stac_version", "source", "transformations"],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "description": "Harmonization profile identifier, e.g. 'eodc-stac-v1'."
+        },
+        "profile_version": {
+          "type": "string",
+          "description": "Version of the harmonization rules that produced this object."
+        },
+        "target_stac_version": {
+          "type": "string",
+          "description": "STAC version this object was migrated to."
+        },
+        "software": { "$ref": "#/definitions/software" },
+        "source": { "$ref": "#/definitions/source" },
+        "transformations": { "$ref": "#/definitions/transformations" }
+      }
+    },
+    "software": {
+      "title": "Harmonization software",
+      "description": "The software/agent that performed the harmonization (W3C PROV 'Agent').",
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "source": {
+      "title": "Source",
+      "description": "The single source this object corresponds to. 'upstream-collection' = a pass-through with a known source document; 'provider-product' = a locally federated collection, identified by provider(s).",
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["upstream-collection", "provider-product"] },
+        "collection_id": { "type": "string" },
+        "href": {
+          "type": "string",
+          "format": "uri-reference",
+          "description": "Source collection URL, when one exists (kind=upstream-collection)."
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the source metadata was fetched (startup time for pass-throughs)."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 of the source metadata snapshot, for reproducibility."
+        },
+        "providers": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/provider" }
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string", "format": "uri-reference" }
+      }
+    },
+    "transformations": {
+      "title": "Transformations",
+      "description": "Ordered list of field-level operations applied by the harmonization layer.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/transformation" }
+    },
+    "transformation": {
+      "type": "object",
+      "required": ["target", "operation"],
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Path of the changed field, e.g. 'summaries/constellation', 'stac_version', 'cube:dimensions/time/extent'."
+        },
+        "operation": {
+          "type": "string",
+          "description": "Operation id. See the operation reference in the README (e.g. 'vocabulary:constellation', 'migration:stac_version', 'bands:migrate', 'extension:drop_unused', 'datacube:fix_temporal_extent')."
+        },
+        "source": {
+          "description": "Original value before harmonization (any JSON type)."
+        },
+        "value": {
+          "description": "New (canonical) value after harmonization (any JSON type)."
+        },
+        "issue": {
+          "type": "string",
+          "description": "Upstream defect id this workaround addresses, e.g. 'UP-1' (see the catalogue's UPSTREAM_ISSUES.md)."
+        }
+      }
+    }
+  }
+}
