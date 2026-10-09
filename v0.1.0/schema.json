@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.1.0/schema.json",
+  "title": "EODC Federation Extension",
+  "description": "Provider-federation and metadata-harmonization provenance fields added by the EODC federated STAC catalogue (catalogue.services.eodc.eu). Reference this schema from an object's `stac_extensions`.",
+  "type": "object",
+  "anyOf": [
+    {
+      "$comment": "Item: extension fields live in `properties`.",
+      "properties": {
+        "properties": { "$ref": "#/definitions/federationFields" }
+      }
+    },
+    {
+      "$comment": "Collection: extension fields live in `summaries`; provenance at the top level.",
+      "properties": {
+        "summaries": { "$ref": "#/definitions/federationFields" },
+        "federation:provenance": { "$ref": "#/definitions/provenance" }
+      }
+    }
+  ],
+  "definitions": {
+    "federationFields": {
+      "type": "object",
+      "properties": {
+        "federation:backends": {
+          "title": "Federated providers",
+          "description": "Names of the EODAG providers that can serve this object (federation is search-time; collections are not merged).",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        }
+      },
+      "patternProperties": {
+        "^federation:source_": {
+          "title": "Pre-harmonization source value",
+          "description": "Original value(s) before vocabulary normalization, kept for backtracking.",
+          "type": "array"
+        }
+      }
+    },
+    "provenance": {
+      "title": "Harmonization provenance",
+      "description": "1:1 backtracking record: where the object came from and what the harmonization layer changed.",
+      "type": "object",
+      "required": ["profile", "target_stac_version", "source", "transformations"],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "description": "Harmonization profile identifier, e.g. 'eodc-stac-v1'."
+        },
+        "profile_version": {
+          "type": "string",
+          "description": "Version of the harmonization rules that produced the object."
+        },
+        "target_stac_version": {
+          "type": "string",
+          "description": "STAC version the object was migrated to."
+        },
+        "source": {
+          "title": "Source",
+          "description": "The single source this object corresponds to (federation never merges).",
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["upstream-collection", "provider-product"],
+              "description": "'upstream-collection': pass-through with a known source document URL. 'provider-product': locally federated collection, identified by provider(s)."
+            },
+            "collection_id": { "type": "string" },
+            "href": {
+              "type": "string",
+              "description": "Source collection URL, when one exists (upstream-collection)."
+            },
+            "providers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "transformations": {
+          "type": "array",
+          "description": "Field-level operations applied by the harmonization layer.",
+          "items": {
+            "type": "object",
+            "required": ["target", "operation"],
+            "properties": {
+              "target": { "type": "string" },
+              "operation": { "type": "string" },
+              "source": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

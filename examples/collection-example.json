@@ -1,0 +1,34 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "id": "GFM",
+  "title": "Global Flood Monitoring",
+  "stac_extensions": [
+    "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.1.0/schema.json"
+  ],
+  "summaries": {
+    "constellation": ["sentinel-1"],
+    "platform": ["sentinel-1a", "sentinel-1b", "sentinel-1c", "sentinel-1d"],
+    "federation:backends": ["eodc"],
+    "federation:source_license": ["proprietary"]
+  },
+  "federation:provenance": {
+    "profile": "eodc-stac-v1",
+    "profile_version": "1",
+    "target_stac_version": "1.1.0",
+    "source": {
+      "kind": "upstream-collection",
+      "collection_id": "GFM",
+      "href": "https://stac.eodc.eu/api/v1/collections/GFM"
+    },
+    "transformations": [
+      { "target": "license", "operation": "license:deprecated", "source": "proprietary" },
+      { "target": "stac_version", "operation": "migration:stac_version", "source": "1.0.0" },
+      {
+        "target": "cube:dimensions/time/extent",
+        "operation": "datacube:fix_temporal_extent",
+        "source": { "interval": [["2015-01-01T00:00:00Z", null]] }
+      }
+    ]
+  }
+}
