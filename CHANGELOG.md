@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.4.0
+
+- Simplified `federation:provenance` to a minimal shape: `profile`
+  (`name@version`) + the plain-language `changes` list only.
+- Removed `source` and `harmonized` (`stac_version`, `upstream_stac_version`,
+  `profile_version`): they duplicated the collection's own `id`,
+  `summaries["federation:backends"]` and top-level `stac_version`.
+- The origin of an upstream pass-through is now a standard STAC `via` link.
+- No-op rule: no `federation:provenance` object is emitted when nothing changed.
+- `additionalProperties: false` on the provenance object.
+
 ## v0.3.0
 
 - Simplified `federation:provenance` to a production shape: `source` + `harmonized`

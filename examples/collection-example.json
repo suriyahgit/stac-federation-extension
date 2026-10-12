@@ -4,7 +4,10 @@
   "id": "GFM",
   "title": "Global Flood Monitoring",
   "stac_extensions": [
-    "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.3.0/schema.json"
+    "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.4.0/schema.json"
+  ],
+  "links": [
+    { "rel": "via", "href": "https://stac.eodc.eu/api/v1/collections/GFM" }
   ],
   "summaries": {
     "constellation": ["sentinel-1"],
@@ -12,17 +15,7 @@
     "federation:backends": ["eodc"]
   },
   "federation:provenance": {
-    "source": {
-      "collection_id": "GFM",
-      "href": "https://stac.eodc.eu/api/v1/collections/GFM",
-      "providers": ["eodc"]
-    },
-    "harmonized": {
-      "profile": "eodc-stac-v1",
-      "profile_version": "1",
-      "stac_version": "1.1.0",
-      "upstream_stac_version": "1.0.0"
-    },
+    "profile": "eodc-stac-v1@1",
     "changes": [
       "Migrated to STAC 1.1.0",
       "Updated license to a current value",

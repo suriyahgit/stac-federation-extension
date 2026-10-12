@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/suriyahgit/stac-federation-extension/main/v0.4.0/schema.json",
+  "title": "EODC Federation Extension",
+  "description": "Federated-provider attribution and metadata-harmonization provenance for the EODC STAC catalogue. The federation is search-time only: collections are not merged, so each harmonized collection maps to exactly one source.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/item" },
+    { "$ref": "#/definitions/collection" }
+  ],
+  "definitions": {
+    "item": {
+      "title": "STAC Item",
+      "properties": {
+        "type": { "const": "Feature" },
+        "properties": { "$ref": "#/definitions/federationFields" }
+      }
+    },
+    "collection": {
+      "title": "STAC Collection",
+      "properties": {
+        "type": { "const": "Collection" },
+        "summaries": { "$ref": "#/definitions/federationFields" },
+        "federation:provenance": { "$ref": "#/definitions/provenance" }
+      }
+    },
+    "federationFields": {
+      "type": "object",
+      "properties": {
+        "federation:backends": {
+          "title": "Federated providers",
+          "description": "Providers that can serve this object.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "provenance": {
+      "title": "Federation provenance",
+      "description": "The harmonization profile applied and what it changed. Minimal by design: the collection's own id, its providers (summaries['federation:backends']) and its stac_version are already on the object, and the origin of a pass-through is a standard 'via' link, so none of them are repeated here. Emitted only when the harmonization changed something.",
+      "type": "object",
+      "required": ["profile", "changes"],
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "title": "Profile",
+          "description": "Harmonization profile and rule version in one token, 'name@version' (e.g. 'eodc-stac-v1@1').",
+          "type": "string",
+          "pattern": "^[a-z0-9._-]+@[0-9]+$"
+        },
+        "changes": {
+          "title": "Changes",
+          "description": "Plain-language summary of what the harmonization changed.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
